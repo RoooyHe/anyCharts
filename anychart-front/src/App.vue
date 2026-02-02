@@ -1,8 +1,9 @@
 <template>
   <div class="app">
     <header>
-      <h1>anyCharts - Demo</h1>
-      <p>从后端 GraphQL 获取图表配置并渲染</p>
+      <h1>anyCharts</h1>
+      <p>图表可视化编辑器</p>
+      <button class="editor-btn" @click="showEditor = true">✏️ 打开编辑器</button>
     </header>
 
     <section class="chart-selector">
@@ -46,18 +47,26 @@
           :pollInterval="pollInterval"
       />
     </section>
+
+    <TemplateEditor 
+      v-if="showEditor" 
+      @back="showEditor = false"
+      @saved="onEditorSaved"
+    />
   </div>
 </template>
 
 <script setup>
 import {onMounted, ref} from 'vue';
 import ChartRenderer from './components/ChartRenderer.vue';
+import TemplateEditor from './components/TemplateEditor.vue';
 
 const charts = ref([]);
 const chartId = ref('sales-bar');
 const pollInterval = ref(0);
 const graphqlUrl = '/graphql';
 const variables = ref({});
+const showEditor = ref(false);
 
 const CHART_TYPE_ICONS = {
   bar: '📊',
@@ -100,6 +109,10 @@ async function fetchCharts() {
   }
 }
 
+function onEditorSaved() {
+  fetchCharts();
+}
+
 onMounted(() => {
   fetchCharts();
 });
@@ -112,13 +125,36 @@ onMounted(() => {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
 header h1 {
-  margin: 0 0 8px 0;
+  margin: 0;
 }
 
 header p {
   color: #666;
-  margin-bottom: 20px;
+  margin: 0;
+  flex: 1;
+}
+
+.editor-btn {
+  padding: 10px 20px;
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editor-btn:hover {
+  background: #1976d2;
 }
 
 .chart-selector {

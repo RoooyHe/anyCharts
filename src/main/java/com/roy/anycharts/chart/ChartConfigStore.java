@@ -160,6 +160,14 @@ public class ChartConfigStore {
     return Optional.ofNullable(store.get(id));
   }
 
+  public void save(ChartConfig config) {
+    store.put(config.getId(), config);
+  }
+
+  public boolean delete(String id) {
+    return store.remove(id) != null;
+  }
+
   public Map<String, ChartConfig> getAll() {
     return new HashMap<>(store);
   }

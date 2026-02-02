@@ -6,6 +6,11 @@ type Query {
     allCharts: [ChartConfig!]!
 }
 
+type Mutation {
+    saveChartConfig(input: ChartConfigInput!): ChartConfig
+    deleteChartConfig(id: ID!): Boolean
+}
+
 type Subscription {
     chartUpdates(id: ID!, variables: JSON): RenderedChart
 }
@@ -30,4 +35,21 @@ type ChartConfig {
 type RenderedChart {
     id: ID!
     option: JSON
+}
+
+input DataSourceBindingInput {
+    name: String!
+    datasourceId: ID!
+    query: String!
+    mappingPath: String
+    bindingKey: String!
+    stream: Boolean
+}
+
+input ChartConfigInput {
+    id: ID
+    title: String!
+    chartType: String!
+    optionTemplate: JSON!
+    bindings: [DataSourceBindingInput!]!
 }
