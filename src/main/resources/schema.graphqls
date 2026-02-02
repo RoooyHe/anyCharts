@@ -1,0 +1,30 @@
+type Query {
+  renderChart(id: ID!, variables: JSON): RenderedChart
+  chartConfig(id: ID!): ChartConfig
+}
+
+type Subscription {
+  chartUpdates(id: ID!, variables: JSON): RenderedChart
+}
+
+scalar JSON
+
+type DataSourceBinding {
+  name: String!
+  datasourceId: ID!
+  query: String!
+  mapping: JSON
+  stream: Boolean
+}
+
+type ChartConfig {
+  id: ID!
+  title: String
+  optionTemplate: JSON
+  bindings: [DataSourceBinding!]!
+}
+
+type RenderedChart {
+  id: ID!
+  option: JSON
+}
