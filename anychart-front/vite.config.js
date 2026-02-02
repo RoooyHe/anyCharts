@@ -6,7 +6,6 @@ export default defineConfig({
     server: {
         port: 5173,
         proxy: {
-            // 把 /graphql 代理到后端 spring boot (8080)
             '/graphql': {
                 target: 'http://localhost:8331',
                 changeOrigin: true,

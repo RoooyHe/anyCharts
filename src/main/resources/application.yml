@@ -3,4 +3,5 @@ server:
 
 spring:
   graphql:
-    path: /graphql
+    http:
+      path: /graphql

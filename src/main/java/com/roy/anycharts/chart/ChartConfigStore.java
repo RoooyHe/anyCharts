@@ -13,7 +13,7 @@ public class ChartConfigStore {
   public ChartConfigStore() throws Exception {
     // demo: template 有 "{{binding:...}}" 占位符（字符串形式），后续会替换
     String template =
-        "{ \"title\": {\"text\":\"销售\"}, \"xAxis\": {\"data\": \"{{binding:categories}}\"}, \"series\": [{\"type\":\"bar\",\"data\": \"{{binding:series1}}\" }] }";
+        "{ \"title\": {\"text\":\"销售\"}, \"xAxis\": {\"data\": \"{{binding:categories}}\"}, \"yAxis\": {}, \"series\": [{\"type\":\"bar\",\"data\": \"{{binding:series1}}\" }] }";
     JsonNode templateNode = mapper.readTree(template);
     ChartConfig cfg = new ChartConfig("sales-2026", "销售图", templateNode);
     DataSourceBinding b =
