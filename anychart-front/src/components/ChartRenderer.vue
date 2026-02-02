@@ -7,7 +7,7 @@
 </template>
 
 <script setup>
-import {onBeforeUnmount, onMounted, ref, watch} from 'vue';
+import {nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue';
 import * as echarts from 'echarts';
 
 const props = defineProps({
@@ -20,31 +20,21 @@ const props = defineProps({
 const chartEl = ref(null);
 let chartInstance = null;
 let pollHandle = null;
+let pendingOption = null;
 
 const loading = ref(true);
 const error = ref(null);
 
-async function fetchRenderedOption(chartId, variables, graphqlUrl) {
-  const q = `
-    query Render($id: ID!, $vars: JSON) {
-      renderChart(id: $id, variables: $vars) {
-        id
-        option
-      }
-    }`;
-  const resp = await fetch(graphqlUrl, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({query: q, variables: {id: chartId, vars: variables}})
+function updateChart(option) {
+  if (!chartInstance) return;
+  pendingOption = option;
+  // 延迟到下一个渲染周期，避免在 Vue 渲染过程中调用 setOption
+  nextTick(() => {
+    if (pendingOption === option && chartInstance) {
+      chartInstance.setOption(option, true);
+      pendingOption = null;
+    }
   });
-  if (!resp.ok) {
-    throw new Error('Network error: ' + resp.status);
-  }
-  const json = await resp.json();
-  if (json.errors) {
-    throw new Error(JSON.stringify(json.errors));
-  }
-  return json.data?.renderChart?.option || null;
 }
 
 async function loadOnce() {
@@ -65,12 +55,11 @@ async function loadOnce() {
     const json = await resp.json();
     if (json.errors) throw new Error(JSON.stringify(json.errors));
     
-    // API 返回的是 { id, option: { id, option: {...} } }，需要提取内层的 option
     const renderResult = json.data?.renderChart;
     const chartOption = renderResult?.option?.option || renderResult?.option;
     
-    if (chartOption && chartInstance) {
-      chartInstance.setOption(chartOption, true);
+    if (chartOption) {
+      updateChart(chartOption);
     }
   } catch (e) {
     console.error(e);
@@ -84,12 +73,15 @@ onMounted(() => {
   // 立即初始化 ECharts（DOM 在模板中始终存在）
   chartInstance = echarts.init(chartEl.value);
   window.addEventListener('resize', () => chartInstance && chartInstance.resize());
-  // 加载数据
-  loadOnce();
-  // 轮询
-  if (props.pollInterval > 0) {
-    pollHandle = setInterval(loadOnce, props.pollInterval);
-  }
+  
+  // 延迟到下一个宏任务，确保不在 Vue 渲染过程中调用 setOption
+  setTimeout(() => {
+    loadOnce();
+    // 轮询
+    if (props.pollInterval > 0) {
+      pollHandle = setInterval(loadOnce, props.pollInterval);
+    }
+  }, 0);
 });
 
 onBeforeUnmount(() => {
@@ -107,12 +99,12 @@ onBeforeUnmount(() => {
 // 刷新
 watch(
   () => [props.chartId, props.graphqlUrl],
-  () => chartInstance && loadOnce()
+  () => { if (chartInstance) nextTick(() => loadOnce()); }
 );
 
 watch(
   () => props.variables,
-  () => chartInstance && loadOnce(),
+  () => { if (chartInstance) nextTick(() => loadOnce()); },
   {deep: true}
 );
 </script>

@@ -7,14 +7,16 @@ import tools.jackson.databind.JsonNode;
 public class ChartConfig {
   private String id;
   private String title;
+  private String chartType; // bar, line, pie, scatter, area, etc.
   private JsonNode optionTemplate;
   private List<DataSourceBinding> bindings = new ArrayList<>();
 
   public ChartConfig() {}
 
-  public ChartConfig(String id, String title, JsonNode optionTemplate) {
+  public ChartConfig(String id, String title, String chartType, JsonNode optionTemplate) {
     this.id = id;
     this.title = title;
+    this.chartType = chartType;
     this.optionTemplate = optionTemplate;
   }
 
@@ -32,6 +34,14 @@ public class ChartConfig {
 
   public void setTitle(String title) {
     this.title = title;
+  }
+
+  public String getChartType() {
+    return chartType;
+  }
+
+  public void setChartType(String chartType) {
+    this.chartType = chartType;
   }
 
   public JsonNode getOptionTemplate() {

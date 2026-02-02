@@ -3,6 +3,7 @@ scalar JSON
 type Query {
     renderChart(id: ID!, variables: JSON): RenderedChart
     chartConfig(id: ID!): ChartConfig
+    allCharts: [ChartConfig!]!
 }
 
 type Subscription {
@@ -21,6 +22,7 @@ type DataSourceBinding {
 type ChartConfig {
     id: ID!
     title: String
+    chartType: String
     optionTemplate: JSON
     bindings: [DataSourceBinding!]!
 }
