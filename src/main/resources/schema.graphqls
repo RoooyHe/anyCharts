@@ -1,30 +1,31 @@
+scalar JSON
+
 type Query {
-  renderChart(id: ID!, variables: JSON): RenderedChart
-  chartConfig(id: ID!): ChartConfig
+    renderChart(id: ID!, variables: JSON): RenderedChart
+    chartConfig(id: ID!): ChartConfig
 }
 
 type Subscription {
-  chartUpdates(id: ID!, variables: JSON): RenderedChart
+    chartUpdates(id: ID!, variables: JSON): RenderedChart
 }
 
-scalar JSON
-
 type DataSourceBinding {
-  name: String!
-  datasourceId: ID!
-  query: String!
-  mapping: JSON
-  stream: Boolean
+    name: String!
+    datasourceId: ID!
+    query: String!
+    mappingPath: String
+    bindingKey: String
+    stream: Boolean
 }
 
 type ChartConfig {
-  id: ID!
-  title: String
-  optionTemplate: JSON
-  bindings: [DataSourceBinding!]!
+    id: ID!
+    title: String
+    optionTemplate: JSON
+    bindings: [DataSourceBinding!]!
 }
 
 type RenderedChart {
-  id: ID!
-  option: JSON
+    id: ID!
+    option: JSON
 }
