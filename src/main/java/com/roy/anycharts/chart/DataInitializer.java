@@ -16,9 +16,18 @@ public class DataInitializer implements CommandLineRunner {
 
   @Override
   public void run(String... args) {
-    System.out.println("=== DataInitializer 开始初始化数据 ===");
+    System.out.println("=== DataInitializer 开始检查数据 ===");
     
     try {
+      // 检查是否已有数据
+      long count = repository.count();
+      if (count > 0) {
+        System.out.println("数据库已有 " + count + " 条图表记录，跳过初始化");
+        return;
+      }
+      
+      System.out.println("数据库为空，开始初始化示例数据...");
+      
       // 柱状图
       ChartConfigEntity barChart = new ChartConfigEntity("sales-bar", "销售柱状图", "bar",
           "{\"title\":{\"text\":\"销售数据\"},\"tooltip\":{\"trigger\":\"axis\"},\"legend\":{\"data\":[\"销量\"]},\"xAxis\":{\"type\":\"category\",\"data\":\"{{binding:categories}}\"},\"yAxis\":{\"type\":\"value\"},\"series\":[{\"name\":\"销量\",\"type\":\"bar\",\"data\":\"{{binding:series1}}\"}]}");
@@ -77,7 +86,7 @@ public class DataInitializer implements CommandLineRunner {
       repository.save(dbChart);
       System.out.println("✓ 保存数据库示例图");
 
-      long count = repository.count();
+      count = repository.count();
       System.out.println("=== 数据初始化完成，共 " + count + " 条记录 ===");
     } catch (Exception e) {
       System.err.println("❌ 数据初始化失败: " + e.getMessage());

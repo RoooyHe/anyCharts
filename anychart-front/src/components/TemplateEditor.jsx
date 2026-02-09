@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import * as echarts from 'echarts';
 import ChartRenderer from './ChartRenderer';
 
 // 数据源适配器列表
@@ -191,10 +192,11 @@ function generateChartOption(chartType, config, bindings) {
   }
 }
 
-function TemplateEditor({ onBack, onSaved }) {
+function TemplateEditor({ chart, onBack, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [previewKey, setPreviewKey] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // 图表配置（用户友好的字段）
   const [chartConfig, setChartConfig] = useState({
@@ -207,48 +209,96 @@ function TemplateEditor({ onBack, onSaved }) {
     showLabel: true
   });
 
+  // 使用 chart?.id 或生成新ID，确保编辑模式下使用正确的ID
+  const initialId = chart?.id || `chart-${Date.now()}`;
+  
   const [formData, setFormData] = useState({
-    id: `chart-${Date.now()}`,
-    title: '新图表',
-    chartType: 'bar',
+    id: initialId,
+    title: chart?.title || '新图表',
+    chartType: chart?.chartType || 'bar',
     bindings: [
       { name: 'ds1', datasourceId: 'mock-adapter', query: 'mock:sales', mappingPath: '$.items[*].date', bindingKey: 'categories', stream: false },
       { name: 'ds2', datasourceId: 'mock-adapter', query: 'mock:sales', mappingPath: '$.items[*].value', bindingKey: 'data1', stream: false }
     ]
   });
 
-  // 当图表类型改变时，更新配置和绑定
+  // 加载已有图表数据
   useEffect(() => {
-    const chartType = CHART_TYPES.find(t => t.id === formData.chartType);
-    if (chartType) {
-      setChartConfig({ ...chartConfig, ...chartType.defaultConfig });
-      
-      // 根据图表类型设置默认绑定
-      if (formData.chartType === 'pie') {
-        setFormData(prev => ({
-          ...prev,
-          bindings: [
-            { name: 'ds1', datasourceId: 'mock-adapter', query: 'mock:sales', mappingPath: '$.items[*]', bindingKey: 'pieData', stream: false }
-          ]
-        }));
-      } else if (formData.chartType === 'scatter') {
-        setFormData(prev => ({
-          ...prev,
-          bindings: [
-            { name: 'ds1', datasourceId: 'mock-adapter', query: 'mock:correlation', mappingPath: '$.items[*]', bindingKey: 'scatterData', stream: false }
-          ]
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          bindings: [
-            { name: 'ds1', datasourceId: 'mock-adapter', query: 'mock:sales', mappingPath: '$.items[*].date', bindingKey: 'categories', stream: false },
-            { name: 'ds2', datasourceId: 'mock-adapter', query: 'mock:sales', mappingPath: '$.items[*].value', bindingKey: 'data1', stream: false }
-          ]
-        }));
+    if (chart) {
+      loadChartData(chart.id);
+    } else {
+      setIsInitialized(true);
+    }
+  }, [chart]);
+
+  async function loadChartData(chartId) {
+    const query = `query GetChart($id: ID!) { 
+      chartConfig(id: $id) { 
+        id title chartType optionTemplate 
+        bindings { name datasourceId query mappingPath bindingKey stream }
+      } 
+    }`;
+    try {
+      const resp = await fetch('/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, variables: { id: chartId } })
+      });
+      const json = await resp.json();
+      if (json.data?.chartConfig) {
+        const cfg = json.data.chartConfig;
+        setFormData({
+          id: cfg.id,
+          title: cfg.title,
+          chartType: cfg.chartType,
+          bindings: cfg.bindings || []
+        });
+        // 从optionTemplate提取配置
+        if (cfg.optionTemplate?.title?.text) {
+          setChartConfig(prev => ({ ...prev, title: cfg.optionTemplate.title.text }));
+        }
+        setIsInitialized(true);
+      }
+    } catch (e) {
+      console.error('加载图表失败:', e);
+      setIsInitialized(true);
+    }
+  }
+
+  // 当图表类型改变时，更新配置和绑定（仅在新建模式且已初始化后）
+  useEffect(() => {
+    if (!chart && isInitialized) {
+      const chartType = CHART_TYPES.find(t => t.id === formData.chartType);
+      if (chartType) {
+        setChartConfig(prev => ({ ...prev, ...chartType.defaultConfig }));
+        
+        // 根据图表类型设置默认绑定
+        if (formData.chartType === 'pie') {
+          setFormData(prev => ({
+            ...prev,
+            bindings: [
+              { name: 'ds1', datasourceId: 'mock-adapter', query: 'mock:sales', mappingPath: '$.items[*]', bindingKey: 'pieData', stream: false }
+            ]
+          }));
+        } else if (formData.chartType === 'scatter') {
+          setFormData(prev => ({
+            ...prev,
+            bindings: [
+              { name: 'ds1', datasourceId: 'mock-adapter', query: 'mock:correlation', mappingPath: '$.items[*]', bindingKey: 'scatterData', stream: false }
+            ]
+          }));
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            bindings: [
+              { name: 'ds1', datasourceId: 'mock-adapter', query: 'mock:sales', mappingPath: '$.items[*].date', bindingKey: 'categories', stream: false },
+              { name: 'ds2', datasourceId: 'mock-adapter', query: 'mock:sales', mappingPath: '$.items[*].value', bindingKey: 'data1', stream: false }
+            ]
+          }));
+        }
       }
     }
-  }, [formData.chartType]);
+  }, [formData.chartType, chart, isInitialized]);
 
   function showMessage(text, type = 'info') {
     setMessage({ text, type });
@@ -650,24 +700,31 @@ function TemplateEditor({ onBack, onSaved }) {
 }
 
 // 预览组件
+// 预览组件 - 点击按钮时调用后端渲染真实数据
 function PreviewChart({ formData, chartConfig }) {
-  const [tempChartId, setTempChartId] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [previewId, setPreviewId] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [needsRefresh, setNeedsRefresh] = useState(true);
 
+  // 监听配置变化，标记需要刷新
   useEffect(() => {
-    saveTemp();
+    setNeedsRefresh(true);
   }, [formData, chartConfig]);
 
-  async function saveTemp() {
+  async function handlePreview() {
     setLoading(true);
     setError(null);
+    setNeedsRefresh(false);
+    
     try {
+      // 使用固定的临时ID，每次覆盖
+      const tempId = 'preview-temp';
+      
       // 根据用户配置生成 ECharts option
       const optionTemplate = generateChartOption(formData.chartType, chartConfig, formData.bindings);
-      const tempId = `temp-${Date.now()}`;
       
-      // 处理数据绑定（query 字段已经在 DatabaseConfig 中构建好了）
+      // 处理数据绑定
       const processedBindings = formData.bindings.map(binding => ({
         name: binding.name,
         datasourceId: binding.datasourceId,
@@ -693,7 +750,7 @@ function PreviewChart({ formData, chartConfig }) {
           variables: {
             input: {
               id: tempId,
-              title: chartConfig.title,
+              title: '预览图表',
               chartType: formData.chartType,
               optionTemplate,
               bindings: processedBindings
@@ -707,39 +764,54 @@ function PreviewChart({ formData, chartConfig }) {
         throw new Error(result.errors[0].message);
       }
 
-      setTempChartId(tempId);
+      setPreviewId(tempId);
     } catch (e) {
-      console.error('Preview failed:', e);
+      console.error('预览失败:', e);
       setError(e.message);
     } finally {
       setLoading(false);
     }
   }
 
-  if (loading) {
-    return <div className="preview-loading">⏳ 生成预览中...</div>;
-  }
-
-  if (error) {
+  if (!previewId) {
     return (
-      <div className="preview-error">
-        <p>❌ 预览失败</p>
-        <code>{error}</code>
+      <div className="preview-empty">
+        <p>👁️ 配置图表后点击预览按钮查看效果</p>
+        <button 
+          className="btn-preview-large" 
+          onClick={handlePreview}
+          disabled={loading}
+        >
+          {loading ? '⏳ 生成中...' : '🔍 预览图表'}
+        </button>
       </div>
     );
   }
 
-  if (!tempChartId) {
-    return <div className="preview-empty">等待配置...</div>;
-  }
-
   return (
-    <ChartRenderer
-      chartId={tempChartId}
-      variables={{}}
-      graphqlUrl="/graphql"
-      pollInterval={0}
-    />
+    <div className="preview-container">
+      {needsRefresh && (
+        <div className="preview-refresh-hint">
+          <span>⚠️ 配置已更改</span>
+          <button onClick={handlePreview} disabled={loading}>
+            {loading ? '刷新中...' : '🔄 刷新预览'}
+          </button>
+        </div>
+      )}
+      {error && (
+        <div className="preview-error">
+          <p>❌ 预览失败: {error}</p>
+          <button onClick={handlePreview}>重试</button>
+        </div>
+      )}
+      <ChartRenderer
+        key={previewId + Date.now()}
+        chartId={previewId}
+        variables={{}}
+        graphqlUrl="/graphql"
+        pollInterval={0}
+      />
+    </div>
   );
 }
 

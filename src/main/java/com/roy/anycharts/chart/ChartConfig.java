@@ -1,6 +1,7 @@
 package com.roy.anycharts.chart;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -15,6 +16,7 @@ public class ChartConfig {
   private String title;
   private String chartType; // bar, line, pie, scatter, area, etc.
   private JsonNode optionTemplate;
+  private LocalDateTime createdAt;
   private List<DataSourceBinding> bindings = new ArrayList<>();
 
   public ChartConfig(String id, String title, String chartType, JsonNode optionTemplate) {
@@ -22,5 +24,6 @@ public class ChartConfig {
     this.title = title;
     this.chartType = chartType;
     this.optionTemplate = optionTemplate;
+    this.createdAt = LocalDateTime.now();
   }
 }

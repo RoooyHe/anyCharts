@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +21,8 @@ public class ChartConfigEntity {
 
   @Column(columnDefinition = "TEXT")
   private String optionTemplate;
+  
+  private LocalDateTime createdAt;
 
   @OneToMany(mappedBy = "chartConfig", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<DataSourceBindingEntity> bindings = new ArrayList<>();
@@ -31,6 +34,7 @@ public class ChartConfigEntity {
     this.title = title;
     this.chartType = chartType;
     this.optionTemplate = optionTemplate;
+    this.createdAt = LocalDateTime.now();
   }
 
 }

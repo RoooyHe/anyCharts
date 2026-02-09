@@ -70,6 +70,7 @@ public class ChartController {
         "id", cfg.getId(),
         "title", cfg.getTitle(),
         "chartType", cfg.getChartType() != null ? cfg.getChartType() : "",
+        "createdAt", cfg.getCreatedAt() != null ? cfg.getCreatedAt().toString() : "",
         "optionTemplate", cfg.getOptionTemplate(),
         "bindings", cfg.getBindings());
   }

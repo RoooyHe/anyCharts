@@ -52,6 +52,7 @@ public class ChartConfigStore {
       JsonNode optionTemplate = objectMapper.readTree(entity.getOptionTemplate());
       ChartConfig config =
           new ChartConfig(entity.getId(), entity.getTitle(), entity.getChartType(), optionTemplate);
+      config.setCreatedAt(entity.getCreatedAt());
       entity
           .getBindings()
           .forEach(
@@ -79,6 +80,7 @@ public class ChartConfigStore {
             config.getTitle(),
             config.getChartType(),
             config.getOptionTemplate().toString());
+    entity.setCreatedAt(config.getCreatedAt() != null ? config.getCreatedAt() : java.time.LocalDateTime.now());
     config
         .getBindings()
         .forEach(

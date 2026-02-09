@@ -47,6 +47,7 @@ type ChartConfig {
     id: ID!
     title: String
     chartType: String
+    createdAt: String
     optionTemplate: JSON
     bindings: [DataSourceBinding!]!
 }
@@ -104,6 +105,7 @@ type Dashboard {
     name: String!
     width: Int!
     height: Int!
+    createdAt: String
     components: [DashboardComponent!]!
 }
 
