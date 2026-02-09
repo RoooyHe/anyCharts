@@ -1,9 +1,15 @@
 package com.roy.anycharts.chart;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.List;
-import tools.jackson.databind.JsonNode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Setter
+@Getter
+@NoArgsConstructor
 public class ChartConfig {
   private String id;
   private String title;
@@ -11,52 +17,10 @@ public class ChartConfig {
   private JsonNode optionTemplate;
   private List<DataSourceBinding> bindings = new ArrayList<>();
 
-  public ChartConfig() {}
-
   public ChartConfig(String id, String title, String chartType, JsonNode optionTemplate) {
     this.id = id;
     this.title = title;
     this.chartType = chartType;
     this.optionTemplate = optionTemplate;
-  }
-
-  public String getId() {
-    return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  public String getTitle() {
-    return title;
-  }
-
-  public void setTitle(String title) {
-    this.title = title;
-  }
-
-  public String getChartType() {
-    return chartType;
-  }
-
-  public void setChartType(String chartType) {
-    this.chartType = chartType;
-  }
-
-  public JsonNode getOptionTemplate() {
-    return optionTemplate;
-  }
-
-  public void setOptionTemplate(JsonNode optionTemplate) {
-    this.optionTemplate = optionTemplate;
-  }
-
-  public List<DataSourceBinding> getBindings() {
-    return bindings;
-  }
-
-  public void setBindings(List<DataSourceBinding> bindings) {
-    this.bindings = bindings;
   }
 }

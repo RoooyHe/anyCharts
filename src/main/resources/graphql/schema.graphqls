@@ -4,11 +4,30 @@ type Query {
     renderChart(id: ID!, variables: JSON): RenderedChart
     chartConfig(id: ID!): ChartConfig
     allCharts: [ChartConfig!]!
+    
+    # 数据库连接管理
+    databaseConnections: [DatabaseConnection!]!
+    databaseConnection(id: ID!): DatabaseConnection
+    databaseTables(connectionId: ID!): [String!]!
+    databaseColumns(connectionId: ID!, tableName: String!): [DatabaseColumn!]!
+    previewTableData(connectionId: ID!, tableName: String!, limit: Int): [JSON!]!
+    
+    # 大屏管理
+    dashboard(id: ID!): Dashboard
+    allDashboards: [Dashboard!]!
 }
 
 type Mutation {
     saveChartConfig(input: ChartConfigInput!): ChartConfig
     deleteChartConfig(id: ID!): Boolean
+    
+    # 数据库连接管理
+    saveDatabaseConnection(input: DatabaseConnectionInput!): DatabaseConnection
+    deleteDatabaseConnection(id: ID!): Boolean
+    
+    # 大屏管理
+    saveDashboard(input: DashboardInput!): Dashboard
+    deleteDashboard(id: ID!): Boolean
 }
 
 type Subscription {
@@ -37,6 +56,22 @@ type RenderedChart {
     option: JSON
 }
 
+type DatabaseConnection {
+    id: ID!
+    name: String!
+    jdbcUrl: String!
+    username: String!
+    driverClass: String!
+    active: Boolean!
+}
+
+type DatabaseColumn {
+    name: String!
+    type: String!
+    size: Int!
+    nullable: Boolean!
+}
+
 input DataSourceBindingInput {
     name: String!
     datasourceId: ID!
@@ -52,4 +87,52 @@ input ChartConfigInput {
     chartType: String!
     optionTemplate: JSON!
     bindings: [DataSourceBindingInput!]!
+}
+
+input DatabaseConnectionInput {
+    id: ID
+    name: String!
+    jdbcUrl: String!
+    username: String!
+    password: String!
+    driverClass: String!
+    active: Boolean!
+}
+
+type Dashboard {
+    id: ID!
+    name: String!
+    width: Int!
+    height: Int!
+    components: [DashboardComponent!]!
+}
+
+type DashboardComponent {
+    id: String!
+    type: String!
+    x: Float!
+    y: Float!
+    width: Int!
+    height: Int!
+    chartId: String
+    title: String
+}
+
+input DashboardInput {
+    id: ID
+    name: String!
+    width: Int!
+    height: Int!
+    components: [DashboardComponentInput!]!
+}
+
+input DashboardComponentInput {
+    id: String!
+    type: String!
+    x: Float!
+    y: Float!
+    width: Int!
+    height: Int!
+    chartId: String
+    title: String
 }

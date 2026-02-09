@@ -1,16 +1,20 @@
 package com.roy.anycharts.adapter.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.roy.anycharts.adapter.DataSourceAdapter;
 import java.util.Map;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 public class RestAdapter implements DataSourceAdapter {
-  private final WebClient client = WebClient.create();
+  private final WebClient client;
   private final ObjectMapper mapper = new ObjectMapper();
+
+  public RestAdapter(WebClient webClient) {
+    this.client = webClient;
+  }
 
   @Override
   public Mono<JsonNode> execute(String query, Map<String, Object> params) {

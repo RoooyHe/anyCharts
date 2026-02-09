@@ -4,8 +4,8 @@
 
 **anyCharts** 是一个图表拖拽构建平台，支持通过拖拽组件和数据绑定配置来创建可视化图表。
 
-- **后端**：Spring Boot 4.0.2 (Java 17) + GraphQL + WebFlux (Reactor)
-- **前端**：Vue 3 + Vite + ECharts
+- **后端**：Spring Boot 4.0.2 (Java 17) + GraphQL + WebFlux (Reactor) + H2 Database
+- **前端**：React 18 + Vite + ECharts
 - **通信协议**：GraphQL over HTTP
 - **端口**：后端 8331，前端 5173
 
@@ -23,25 +23,32 @@ anyCharts/
 │   │       └── RestAdapter.java        # REST API 适配器
 │   ├── chart/                          # 图表核心逻辑
 │   │   ├── ChartConfig.java            # 图表配置实体
-│   │   ├── ChartConfigStore.java       # 图表配置存储
+│   │   ├── ChartConfigStore.java       # 图表配置存储（使用 JPA）
 │   │   ├── ChartService.java           # 图表渲染服务
-│   │   └── DataSourceBinding.java      # 数据源绑定
+│   │   ├── DataSourceBinding.java      # 数据源绑定
+│   │   ├── DataInitializer.java        # 数据初始化
+│   │   ├── entity/                     # JPA 实体
+│   │   │   ├── ChartConfigEntity.java
+│   │   │   └── DataSourceBindingEntity.java
+│   │   └── repository/                 # JPA Repository
+│   │       └── ChartConfigRepository.java
 │   ├── config/
 │   │   ├── AdapterConfig.java          # 适配器配置
 │   │   └── GraphQlConfig.java          # GraphQL 配置（JSON scalar）
 │   └── graphql/
 │       └── ChartController.java        # GraphQL 控制器
 ├── src/main/resources/
-│   ├── application.yml                 # 应用配置
+│   ├── application.yml                 # 应用配置（含 H2 配置）
 │   └── graphql/schema.graphqls         # GraphQL Schema
-└── anychart-front/                     # Vue 前端
+└── anychart-front/                     # React 前端
     ├── src/
-    │   ├── App.vue                     # 主应用组件
-    │   ├── main.js                     # 应用入口
+    │   ├── App.jsx                     # 主应用组件
+    │   ├── main.jsx                    # 应用入口
     │   ├── styles.css                  # 全局样式
     │   └── components/
-    │       └── ChartRenderer.vue       # 图表渲染组件
-    ├── vite-config.js                  # Vite 配置
+    │       ├── ChartRenderer.jsx       # 图表渲染组件
+    │       └── TemplateEditor.jsx      # 模板编辑器
+    ├── vite.config.js                  # Vite 配置
     └── package.json                    # 前端依赖
 ```
 
@@ -59,7 +66,13 @@ cd C:\Users\Roy\IdeaProjects\anyCharts
 java -jar target/anycharts-0.0.1-SNAPSHOT.jar
 ```
 
-### 前端 (Vue + Vite)
+**H2 数据库访问**：
+- 控制台：`http://localhost:8331/h2-console`
+- JDBC URL: `jdbc:h2:mem:anycharts`
+- 用户名: `sa`
+- 密码: (留空)
+
+### 前端 (React + Vite)
 
 ```powershell
 cd C:\Users\Roy\IdeaProjects\anyCharts\anychart-front
@@ -81,7 +94,7 @@ npm run preview
 
 需要同时启动后端和前端：
 1. 后端：`./mvnw spring-boot:run`
-2. 前端：`npm run dev`
+2. 前端：`cd anychart-front && npm run dev`
 
 前端 Vite 配置了 GraphQL 代理，将 `/graphql` 请求转发到后端 `http://localhost:8331/graphql`。
 
@@ -136,10 +149,10 @@ curl -X POST http://localhost:8331/graphql \
 
 ## 数据流架构
 
-1. **前端请求**：Vue 组件通过 GraphQL 查询 `renderChart`
+1. **前端请求**：React 组件通过 GraphQL 查询 `renderChart`
 2. **后端处理**：
    - `ChartController` 接收请求
-   - `ChartService` 从 `ChartConfigStore` 获取配置
+   - `ChartService` 从 `ChartConfigStore` 获取配置（从 H2 数据库）
    - 通过 `AdapterRegistry` 调用对应的 `DataSourceAdapter`
    - 使用 JsonPath 提取数据，替换模板中的占位符
    - 返回渲染好的 ECharts option
@@ -168,12 +181,14 @@ curl -X POST http://localhost:8331/graphql \
 - GraphQL 控制器方法参数需要 `@Argument` 注解
 - JSON scalar 通过 `GraphQlConfig` 配置
 - 数据源适配器注册在 `AdapterRegistry`
+- 使用 **Spring Data JPA** + **H2** 内存数据库存储图表配置
+- 应用启动时通过 `DataInitializer` 自动初始化示例数据
 
-### 前端 (Vue)
+### 前端 (React)
 
-- 使用 **Vue 3 Composition API** (`<script setup>`)
-- ECharts 在 `onMounted` 中初始化，`onBeforeUnmount` 中销毁
-- 图表容器始终存在于 DOM，使用 CSS 控制显示/隐藏
+- 使用 **React 18** 函数组件和 Hooks
+- ECharts 在 `useEffect` 中初始化和清理
+- 图表容器使用 `useRef` 管理
 - 轮询机制用于简单演示，生产环境应使用 GraphQL Subscription
 
 ### Git
@@ -187,3 +202,5 @@ curl -X POST http://localhost:8331/graphql \
 2. **JSON scalar 错误**：确保 `GraphQlConfig` 已配置 `ExtendedScalars.Json`
 3. **ECharts 尺寸为 0**：图表容器必须在 DOM 中存在且有尺寸
 4. **参数无法识别**：GraphQL 方法参数需要 `@Argument` 注解
+5. **数据库连接失败**：检查 H2 配置，确保 `spring.datasource.url` 正确
+6. **前端依赖安装失败**：删除 `node_modules` 和 `package-lock.json` 后重新 `npm install`

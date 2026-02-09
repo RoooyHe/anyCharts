@@ -5,8 +5,8 @@ import java.time.Duration;
 import java.util.Map;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class MockAdapter implements DataSourceAdapter {
   private final ObjectMapper mapper = new ObjectMapper();
