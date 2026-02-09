@@ -1,72 +1,255 @@
-# anyCharts 前端 (React)
+# anyCharts Frontend
 
-基于 React 18 + Vite + ECharts 的图表可视化前端。
+[中文文档](./README_zh.md)
 
-## 快速开始
+React-based frontend for the anyCharts visualization platform.
 
-### 安装依赖
+## Features
+
+- 📊 **Chart Management** - Grid-based card layout for managing charts
+- 🎨 **Dashboard Builder** - Drag-and-drop dashboard editor
+- ✏️ **Chart Editor** - User-friendly chart configuration interface
+- 👁️ **Live Preview** - Preview charts with real data before saving
+- 💾 **Database Integration** - Visual interface for database queries
+- 🔄 **Real-time Updates** - Automatic chart refresh on data changes
+
+## Tech Stack
+
+- **React 18** - UI framework with Hooks
+- **Vite 5** - Fast build tool and dev server
+- **ECharts 5** - Powerful charting library
+- **GraphQL** - API communication
+
+## Quick Start
+
+### Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 开发模式
+### Development Mode
 
 ```bash
 npm run dev
 ```
 
-访问 `http://localhost:5173`
+Visit `http://localhost:5173`
 
-### 构建生产版本
+### Build for Production
 
 ```bash
 npm run build
 ```
 
-### 预览构建结果
+### Preview Production Build
 
 ```bash
 npm run preview
 ```
 
-## 技术栈
-
-- **React 18** - UI 框架
-- **Vite 5** - 构建工具
-- **ECharts 5** - 图表库
-
-## 项目结构
+## Project Structure
 
 ```
 src/
-├── App.jsx                 # 主应用组件
-├── main.jsx                # 应用入口
-├── styles.css              # 全局样式
+├── App.jsx                     # Main application component
+├── main.jsx                    # Application entry point
+├── styles.css                  # Global styles
 └── components/
-    ├── ChartRenderer.jsx   # 图表渲染组件
-    └── TemplateEditor.jsx  # 模板编辑器
+    ├── ChartRenderer.jsx       # Chart rendering with ECharts
+    ├── ChartList.jsx           # Chart management (grid layout)
+    ├── TemplateEditor.jsx      # Chart configuration editor
+    ├── DashboardList.jsx       # Dashboard management (list + preview)
+    └── DashboardEditor.jsx     # Dashboard drag-and-drop editor
 ```
 
-## 功能特性
+## Component Overview
 
-- 📊 多种图表类型支持（柱状图、折线图、饼图、散点图、面积图）
-- 🎨 图表选择和预览
-- ✏️ 图表配置编辑器
-- 🔄 实时数据刷新
-- 📡 GraphQL 数据通信
+### ChartRenderer
+Renders ECharts based on chart configuration from backend.
 
-## 与后端通信
+**Props:**
+- `chartId` - Chart ID to render
+- `variables` - Variables for data binding
+- `graphqlUrl` - GraphQL endpoint
+- `pollInterval` - Auto-refresh interval (ms)
 
-前端通过 GraphQL 与后端通信，Vite 配置了代理：
+### ChartList
+Displays all charts in a responsive grid with cards.
+
+**Features:**
+- Card-based layout with chart icons
+- Preview modal with live chart rendering
+- Edit and delete actions
+- Creation timestamp display
+
+### TemplateEditor
+User-friendly chart configuration editor.
+
+**Features:**
+- Chart type selection (bar, line, pie, scatter, area)
+- Visual configuration inputs (no JSON editing)
+- Data source binding configuration
+- Database query builder
+- Live preview with real data
+
+### DashboardList
+Manages dashboards with list and preview layout.
+
+**Features:**
+- Left sidebar with dashboard list
+- Right panel with miniature preview
+- Dashboard metadata display
+- Edit and view actions
+
+### DashboardEditor
+Drag-and-drop dashboard builder.
+
+**Features:**
+- Component palette (chart types)
+- Draggable canvas (1920x1080)
+- Resize handles for components
+- Properties panel for configuration
+- Chart binding to existing charts
+
+## GraphQL Communication
+
+### Queries
 
 ```javascript
-proxy: {
-  '/graphql': {
-    target: 'http://localhost:8331',
-    changeOrigin: true
+// Fetch all charts
+const query = `
+  query {
+    allCharts {
+      id
+      title
+      chartType
+      createdAt
+    }
+  }
+`;
+
+// Render chart with data
+const query = `
+  query {
+    renderChart(id: "sales-bar", variables: {}) {
+      id
+      option
+    }
+  }
+`;
+```
+
+### Mutations
+
+```javascript
+// Save chart configuration
+const mutation = `
+  mutation SaveChart($input: ChartConfigInput!) {
+    saveChartConfig(input: $input) {
+      id
+      title
+    }
+  }
+`;
+
+// Save dashboard
+const mutation = `
+  mutation SaveDashboard($input: DashboardInput!) {
+    saveDashboard(input: $input) {
+      id
+      name
+    }
+  }
+`;
+```
+
+## Styling
+
+The project uses vanilla CSS with a modern design system:
+
+- **Colors**: Purple gradient primary, semantic colors for states
+- **Layout**: Flexbox and Grid for responsive design
+- **Components**: Card-based UI with shadows and hover effects
+- **Typography**: System fonts with clear hierarchy
+
+## Development Guidelines
+
+### Adding a New Chart Type
+
+1. Add to `CHART_TYPES` array in `TemplateEditor.jsx`:
+```javascript
+{
+  id: 'newtype',
+  name: 'New Type',
+  icon: '📊',
+  defaultConfig: { ... }
+}
+```
+
+2. Add icon mapping in `CHART_TYPE_ICONS`
+
+3. Add color mapping in `CHART_TYPE_COLORS`
+
+### Adding a New Component
+
+1. Create component file in `src/components/`
+2. Import and use in `App.jsx`
+3. Add corresponding styles in `styles.css`
+
+## Backend Integration
+
+The frontend communicates with the backend via GraphQL over HTTP.
+
+**Vite Proxy Configuration:**
+```javascript
+export default {
+  server: {
+    proxy: {
+      '/graphql': {
+        target: 'http://localhost:8331',
+        changeOrigin: true
+      }
+    }
   }
 }
 ```
 
-确保后端服务运行在 `http://localhost:8331`。
+Ensure the backend is running on `http://localhost:8331`.
+
+## Troubleshooting
+
+### Charts Not Rendering
+
+- Check if ECharts is properly initialized
+- Verify chart container has dimensions
+- Check browser console for errors
+
+### GraphQL Errors
+
+- Verify backend is running
+- Check network tab for request/response
+- Validate GraphQL query syntax
+
+### Build Issues
+
+- Delete `node_modules` and `package-lock.json`
+- Run `npm install` again
+- Clear Vite cache: `npm run dev -- --force`
+
+## Performance Tips
+
+- Use `React.memo` for expensive components
+- Implement virtual scrolling for large lists
+- Debounce chart updates on configuration changes
+- Use code splitting for large components
+
+## Browser Support
+
+- Chrome/Edge (latest)
+- Firefox (latest)
+- Safari (latest)
+
+## License
+
+MIT License
